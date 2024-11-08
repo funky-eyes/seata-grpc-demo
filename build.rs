@@ -1,8 +1,9 @@
-use std::{env, path::PathBuf};
-
-fn main() {
-    let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     tonic_build::configure()
-        .compile_protos(&["proto/grpcMessage.proto"], &["proto"])
-        .unwrap();
+        .build_server(false)
+        .compile_protos(
+            &["proto/seata/grpcMessage.proto"],
+            &["proto/seata"],
+        )?;
+    Ok(())
 }

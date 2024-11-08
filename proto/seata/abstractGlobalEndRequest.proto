@@ -15,18 +15,19 @@
  * limitations under the License.
  */
 syntax = "proto3";
-package seataservice;
+
+package org.apache.seata.protocol.protobuf;
+
+import "abstractTransactionRequest.proto";
+
 option java_multiple_files = true;
-option java_outer_classname = "GrpcMessage";
-option java_package = "org.apache.seata.core.protocol.generated";
+option java_outer_classname = "AbstractGlobalEndRequest";
+option java_package = "org.apache.seata.serializer.protobuf.generated";
 
-message GrpcMessageProto {
-    int32 id = 1;
-    int32 messageType = 2;
-    map<string, string> headMap = 3;
-    bytes body = 4;
-}
+// PublishRequest is a publish request.
+message AbstractGlobalEndRequestProto {
 
-service SeataService {
-    rpc sendRequest (stream GrpcMessageProto) returns (stream GrpcMessageProto);
+    AbstractTransactionRequestProto abstractTransactionRequest =1;
+    string xid = 2;
+    string extraData = 3;
 }
