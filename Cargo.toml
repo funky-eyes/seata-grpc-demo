@@ -8,15 +8,43 @@ edition = "2021"
 [[bin]]
 name = "seata-main"
 path = "src/main.rs"
+required-features = ["streaming"]
+
+
+[features]
+gcp = ["dep:prost-types", "tonic/tls"]
+routeguide = ["dep:async-stream", "tokio-stream", "dep:rand", "dep:serde", "dep:serde_json"]
+reflection = ["dep:tonic-reflection"]
+autoreload = ["tokio-stream/net", "dep:listenfd"]
+health = ["dep:tonic-health"]
+grpc-web = ["dep:tonic-web", "dep:bytes", "dep:http", "dep:hyper", "dep:hyper-util", "dep:tracing-subscriber", "dep:tower", "dep:tower-http", "tower-http?/cors"]
+tracing = ["dep:tracing", "dep:tracing-subscriber"]
+uds = ["tokio-stream/net", "dep:tower", "dep:hyper", "dep:hyper-util"]
+streaming = ["tokio-stream", "dep:h2"]
+mock = ["tokio-stream", "dep:tower", "dep:hyper-util"]
+tower = ["dep:tower", "dep:http"]
+json-codec = ["dep:serde", "dep:serde_json", "dep:bytes"]
+compression = ["tonic/gzip"]
+tls = ["tonic/tls"]
+tls-rustls = ["dep:http", "dep:hyper", "dep:hyper-util", "dep:hyper-rustls", "dep:tower", "tower-http/util", "tower-http/add-extension", "dep:rustls-pki-types", "dep:tokio-rustls", "dep:pin-project", "dep:http-body-util"]
+tls-client-auth = ["tonic/tls"]
+types = ["dep:tonic-types"]
+h2c = ["dep:hyper", "dep:tower", "dep:http", "dep:hyper-util"]
+cancellation = ["dep:tokio-util"]
+
+full = ["gcp", "routeguide", "reflection", "autoreload", "health", "grpc-web", "tracing", "uds", "streaming", "mock", "tower", "json-codec", "compression", "tls", "tls-rustls", "tls-client-auth", "types", "cancellation", "h2c"]
+default = ["full"]
 
 [dependencies]
-tonic = "0.12.3"
-prost = "0.12.3"
-tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
-tonic-web = {version = "0.12.3", optional = true }
+# Common dependencies
+tokio = { version = "1.0", features = ["rt-multi-thread", "macros"] }
+prost = "0.13"
+tonic = { version = "0.12.3" }
+# Optional dependencies
+tonic-web = { version = "0.12.3", optional = true }
 tonic-health = { version = "0.12.3", optional = true }
-tonic-reflection = {version = "0.12.3", optional = true }
-tonic-types = {version = "0.12.3", optional = true }
+tonic-reflection = { version = "0.12.3", optional = true }
+tonic-types = { version = "0.12.3", optional = true }
 async-stream = { version = "0.3", optional = true }
 tokio-stream = { version = "0.1", optional = true }
 tokio-util = { version = "0.7.8", optional = true }
@@ -42,4 +70,4 @@ tower-http = { version = "0.6", optional = true }
 pin-project = { version = "1.0.11", optional = true }
 
 [build-dependencies]
-tonic-build = "0.12.3"
+tonic-build = { version = "0.12.3",  features = ["prost"] }
