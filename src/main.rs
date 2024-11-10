@@ -14,8 +14,9 @@ use grpc_message::{seata_service_client::SeataServiceClient, GrpcMessageProto};
 use prost::alloc::string::String;
 use prost::alloc::boxed::Box;
 use prost::Message;
+use prost_types::Any;
 
-fn seata_requests_iter() -> impl Stream<Item = GrpcMessageProto> {
+fn seata_requests_iter() -> impl Stream<Item=GrpcMessageProto> {
     let abstract_identify_request_proto = AbstractIdentifyRequestProto {
         abstract_message: None,
         version: String::new(),
@@ -25,20 +26,24 @@ fn seata_requests_iter() -> impl Stream<Item = GrpcMessageProto> {
     };
 
     let mut head_map = HashMap::new();
-    let result = 2f64.powi(1);
+    let byte_value = (0x128 & 0xFF) as u8;
     let register_tm_request_proto = RegisterTmRequestProto {
         abstract_identify_request: Some(abstract_identify_request_proto),
     };
-    head_map.insert("codec-type".to_string(), result.to_string());
-    let bytes = register_tm_request_proto.encode_to_vec();
+    head_map.insert("codec-type".to_string(), byte_value.to_string());
+
+    let mut buf = Vec::new();
+    register_tm_request_proto.encode(&mut buf).unwrap();
+    let any_message = Any {
+        type_url: "type.googleapis.com/org.apache.seata.protocol.protobuf.RegisterTMRequestProto".to_string(),
+        value: buf,
+    };
     let grpc_message_proto = GrpcMessageProto {
         id: 1,
         message_type: 2,
         head_map: head_map,
-        body: bytes,
+        body: any_message.encode_to_vec(),
     };
-    let test =  RegisterTmRequestProto::decode(grpc_message_proto.body.as_slice()).unwrap();
-    println!("\treceived message: `{}`", test.abstract_identify_request.unwrap().application_id);
     tokio_stream::iter(1..usize::MAX).map(move |i| grpc_message_proto.clone())
 }
 
@@ -54,7 +59,9 @@ async fn seata_streaming_echo(client: &mut SeataServiceClient<Channel>, num: usi
 
     while let Some(received) = resp_stream.next().await {
         let received = received.unwrap();
-        println!("\treceived message: `{}`", received.message_type);
+        let decoded_message: Any = Any::decode(&*received.body).unwrap();
+        let response = RegisterTmResponseProto::decode(&*decoded_message.value).unwrap();
+        println!("\treceived message: `{}`", response.abstract_identify_response.unwrap().version);
     }
 }
 
