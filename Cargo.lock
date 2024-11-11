@@ -895,6 +895,7 @@ dependencies = [
  "hyper",
  "hyper-rustls",
  "hyper-util",
+ "lazy_static",
  "listenfd",
  "pin-project",
  "prost",
