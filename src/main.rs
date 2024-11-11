@@ -12,12 +12,12 @@ use std::collections::HashMap;
 use seata_protobuf::{MessageTypeProto, RegisterTmRequestProto, AbstractMessageProto, AbstractIdentifyRequestProto, RegisterTmResponseProto};
 use tokio_stream::{Stream, StreamExt};
 use tonic::transport::Channel;
-use grpc_message::{seata_service_client::SeataServiceClient, GrpcMessageProto};
 use prost::alloc::string::String;
 use prost::alloc::boxed::Box;
 use prost::Message;
 use prost_types::Any;
 use crate::org::apache::seata::core::rpc::session_manager::SessionManager;
+use crate::org::apache::seata::core::rpc::session_manager::grpc_message::{{seata_service_client::SeataServiceClient, GrpcMessageProto}};
 
 fn seata_requests_iter() -> impl Stream<Item=GrpcMessageProto> {
     let abstract_identify_request_proto = AbstractIdentifyRequestProto {
@@ -77,10 +77,15 @@ async fn seata_streaming_echo(client: &mut SeataServiceClient<Channel>, num: usi
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut addresses = Vec::new();
     addresses.push("http://127.0.0.1:8091".to_string());
-    SessionManager::init(addresses).await;
-    let mut client = SeataServiceClient::connect("http://127.0.0.1:8091").await?;
-    println!("\r\nseata stream:");
-    seata_streaming_echo(&mut client, 1).await;
-
+    SessionManager::init(&addresses).await;
+    let client = SessionManager::get(&"http://127.0.0.1:8091".to_string());
+    match client {
+        Some(mut client) => {
+            seata_streaming_echo(&mut client, 1).await;
+        },
+        None => {
+            println!("client is None");
+        }
+    }
     Ok(())
 }
