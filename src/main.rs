@@ -1,3 +1,5 @@
+pub mod org;
+
 pub mod grpc_message {
     tonic::include_proto!("org.apache.seata.protocol.protobuf.grcp_message");
 }
@@ -15,6 +17,7 @@ use prost::alloc::string::String;
 use prost::alloc::boxed::Box;
 use prost::Message;
 use prost_types::Any;
+use crate::org::apache::seata::core::rpc::session_manager::SessionManager;
 
 fn seata_requests_iter() -> impl Stream<Item=GrpcMessageProto> {
     let abstract_identify_request_proto = AbstractIdentifyRequestProto {
@@ -60,15 +63,23 @@ async fn seata_streaming_echo(client: &mut SeataServiceClient<Channel>, num: usi
     while let Some(received) = resp_stream.next().await {
         let received = received.unwrap();
         let decoded_message: Any = Any::decode(&*received.body).unwrap();
-        let response = RegisterTmResponseProto::decode(&*decoded_message.value).unwrap();
-        println!("\treceived message: `{}`", response.abstract_identify_response.unwrap().version);
+        println!(" decoded_message.type_url: {}", decoded_message.type_url);
+        if decoded_message.type_url == "type.googleapis.com/org.apache.seata.protocol.protobuf.RegisterTMResponseProto" {
+            let response = RegisterTmResponseProto::decode(&*decoded_message.value).unwrap();
+            println!("\treceived message: `{}`", response.abstract_identify_response.unwrap().version);
+        } else {
+            continue;
+        }
     }
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut addresses = Vec::new();
+    addresses.push("http://127.0.0.1:8091".to_string());
+    SessionManager::init(addresses).await;
     let mut client = SeataServiceClient::connect("http://127.0.0.1:8091").await?;
-    println!("\r\nseata stream echo:");
+    println!("\r\nseata stream:");
     seata_streaming_echo(&mut client, 1).await;
 
     Ok(())

@@ -32,6 +32,11 @@ import "globalBeginRequest.proto";
 import "globalBeginResponse.proto";
 import "globalCommitRequest.proto";
 import "globalCommitResponse.proto";
+import "heartbeatMessage.proto";
+import "globalLockQueryRequest.proto";
+import "globalLockQueryResponse.proto";
+import "mergedResultMessage.proto";
+
 
 
 
